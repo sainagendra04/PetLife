@@ -39,7 +39,7 @@ namespace PetLife.Controllers
             try
             {
                 var stripeSignature = Request.Headers["Stripe-Signature"];
-                const string webhookSecret = "whsec_10b6bc0d7fccb254310f672fd0d51f8e099c6bd7306c97c0b9f6a0ea973a1277";// 🔑 from Stripe Dashboard
+                const string webhookSecret = "{Use webhook from your stipe dashboard}";// 🔑 from Stripe Dashboard
 
                 if (string.IsNullOrEmpty(stripeSignature))
                     return BadRequest("Missing Stripe-Signature header");
