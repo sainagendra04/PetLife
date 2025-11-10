@@ -1,0 +1,6 @@
+@PetLife_HostAddress = http://localhost:5172
+
+GET {{PetLife_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
