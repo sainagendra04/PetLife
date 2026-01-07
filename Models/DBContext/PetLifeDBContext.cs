@@ -15,6 +15,8 @@ namespace PetLife.Models.DBContext
         public DbSet<Payment> Payments { get; set; }
         public DbSet<PetCategory> PetCategories { get; set; }
 
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //one-to-one User-->Customer

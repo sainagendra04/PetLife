@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PetLife.Dto;
 using PetLife.Interfaces;
 using PetLife.Models;
 using PetLife.Serivce;
+using System.Security.Claims;
 
 namespace PetLife.Controllers
 {
@@ -32,6 +34,7 @@ namespace PetLife.Controllers
         {
             return await userLoginService.LoginCustomer(dto);
         }
+        
         [HttpGet("user/{userName}")]
         public async Task<IActionResult> GetUserByUsername(string userName)
         {
@@ -44,6 +47,20 @@ namespace PetLife.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                return await userLoginService.LogoutCustomer();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Logout failed", error = ex.Message });
+            }
+        }
+        [Authorize]
         [HttpGet("user/id/{userId}")]
         public async Task<IActionResult> GetUserById(Guid userId)
         {
@@ -73,6 +90,26 @@ namespace PetLife.Controllers
         {
             var users = await userService.GetAllCustomers();
             return Ok(users);
+        }
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh()
+        {
+            // 1. Read the token from the cookie
+            var oldToken = Request.Cookies["refreshToken"];
+            if (oldToken == null)
+            {
+                return Unauthorized("Refresh token missing.");
+            }
+
+            // 2. Validate and rotate tokens (Logic usually in a Service)
+            var result = await userLoginService.RotateTokens(oldToken);
+            if (result == null) return Unauthorized("Invalid or expired refresh token.");
+
+            // 3. Update the cookie with the NEW refresh token (Rotation)
+            userLoginService.setRefreshTokenCookie(result.NewRefreshToken);
+
+            // 4. Return new Access Token
+            return Ok(new { token = result.NewAccessToken });
         }
     }
 }

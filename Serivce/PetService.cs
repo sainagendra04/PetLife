@@ -76,6 +76,7 @@ namespace PetLife.Serivce
                     Age = c.Age,
                     Price = c.Price,
                     Available = c.Available,
+                    ImageUrl = c.ImageUrl,
                     Category = new PetCategoryDto
                     {
                         CategoryId = c.Category.PetCategoryId,

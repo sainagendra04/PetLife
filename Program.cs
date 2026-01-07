@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PetLife.Dto.ErrorCodes;
+using PetLife.Interfaces;
 using PetLife.Models.DBContext;
 using PetLife.Serivce;
 using Stripe;
@@ -19,6 +21,7 @@ builder.Services.AddTransient<PetFoodService>();
 builder.Services.AddTransient<PetService>();
 builder.Services.AddTransient<OrderService>();
 builder.Services.AddTransient<PaymentService>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 
 //Adding the DbContext for SQL Server
@@ -41,10 +44,12 @@ builder.Services.AddAuthentication(options =>
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
         };
     });
-
+builder.Services.AddAntiforgery(options => {
+    options.HeaderName = "X-XSRF-TOKEN";
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -89,7 +94,8 @@ StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
-        builder => builder.WithOrigins("http://localhost:5173") // React dev server address
+        builder => builder.WithOrigins("http://localhost:5173", "http://localhost:3000") // React dev server address
+                          .AllowCredentials()
                           .AllowAnyMethod()
                           .AllowAnyHeader());
 });
@@ -104,9 +110,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.Use((context, next) =>
+{
+    var antiforgery = context.RequestServices.GetRequiredService<IAntiforgery>();
+    var tokens = antiforgery.GetAndStoreTokens(context);
+
+    context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!,
+        new CookieOptions { HttpOnly = false, SameSite = SameSiteMode.Lax, Secure = true });
+    return next(context);
+});
+
+app.UseAntiforgery();
 
 app.UseCors("AllowReactApp");
+
+app.UseHttpsRedirection();
 
 app.UseAuthentication();
 

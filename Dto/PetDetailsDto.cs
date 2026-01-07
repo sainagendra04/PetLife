@@ -10,6 +10,7 @@ namespace PetLife.Dto
         public int Age { get; set; }
         public decimal Price { get; set; }
         public bool Available { get; set; } = true;
+        public string ImageUrl { get; set; }
     }
     public class PetCategoryDto
     {
